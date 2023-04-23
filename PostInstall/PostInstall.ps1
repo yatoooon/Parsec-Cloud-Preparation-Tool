@@ -1,11 +1,11 @@
 param (
     [switch]$DontPromptPasswordUpdateGPU
     )
-    
+
 
 $host.ui.RawUI.WindowTitle = "Parsec Cloud Preparation Tool"
 
-[Net.ServicePointManager]::SecurityProtocol = "tls12, tls11, tls" 
+[Net.ServicePointManager]::SecurityProtocol = "tls12, tls11, tls"
 
 Function ProgressWriter {
     param (
@@ -25,7 +25,7 @@ function setupEnvironment {
     if((Test-Path -Path C:\Windows\system32\GroupPolicy\Machine\Scripts\Shutdown) -eq $true) {} Else {New-Item -Path C:\Windows\system32\GroupPolicy\Machine\Scripts\Shutdown -ItemType directory | Out-Null}
     if((Test-Path -Path $env:ProgramData\ParsecLoader) -eq $true) {} Else {New-Item -Path $env:ProgramData\ParsecLoader -ItemType directory | Out-Null}
     if((Test-Path C:\Windows\system32\GroupPolicy\Machine\Scripts\psscripts.ini) -eq $true) {} Else {Move-Item -Path $path\ParsecTemp\PreInstall\psscripts.ini -Destination C:\Windows\system32\GroupPolicy\Machine\Scripts}
-    if((Test-Path C:\Windows\system32\GroupPolicy\Machine\Scripts\Shutdown\NetworkRestore.ps1) -eq $true) {} Else {Move-Item -Path $path\ParsecTemp\PreInstall\NetworkRestore.ps1 -Destination C:\Windows\system32\GroupPolicy\Machine\Scripts\Shutdown} 
+    if((Test-Path C:\Windows\system32\GroupPolicy\Machine\Scripts\Shutdown\NetworkRestore.ps1) -eq $true) {} Else {Move-Item -Path $path\ParsecTemp\PreInstall\NetworkRestore.ps1 -Destination C:\Windows\system32\GroupPolicy\Machine\Scripts\Shutdown}
     if((Test-Path $env:ProgramData\ParsecLoader\clear-proxy.ps1) -eq $true) {} Else {Move-Item -Path $path\ParsecTemp\PreInstall\clear-proxy.ps1 -Destination $env:ProgramData\ParsecLoader}
     if((Test-Path $env:ProgramData\ParsecLoader\CreateClearProxyScheduledTask.ps1) -eq $true) {} Else {Move-Item -Path $path\ParsecTemp\PreInstall\CreateClearProxyScheduledTask.ps1 -Destination $env:ProgramData\ParsecLoader}
     if((Test-Path $env:ProgramData\ParsecLoader\Automatic-Shutdown.ps1) -eq $true) {} Else {Move-Item -Path $path\ParsecTemp\PreInstall\Automatic-Shutdown.ps1 -Destination $env:ProgramData\ParsecLoader}
@@ -40,7 +40,7 @@ function setupEnvironment {
     if((Test-Path $env:ProgramData\ParsecLoader\parsecpublic.cer) -eq $true) {} Else {Move-Item -Path $path\ParsecTemp\PreInstall\parsecpublic.cer -Destination $env:ProgramData\ParsecLoader}
     }
 
-function cloudprovider { 
+function cloudprovider {
     #finds the cloud provider that this VM is hosted by
     $gcp = $(
                 try {
@@ -68,16 +68,16 @@ function cloudprovider {
 
     $azure = $(
                   Try {(Invoke-Webrequest -Headers @{"Metadata"="true"} -Uri "http://169.254.169.254/metadata/instance/compute/userData?api-version=2021-01-01&format=text" -TimeoutSec 5)}
-                  catch {}              
+                  catch {}
                )
 
 
     if ($GCP.StatusCode -eq 200) {
         "Google Cloud Instance"
-        } 
+        }
     Elseif ($AWS.StatusCode -eq 200) {
         "Amazon AWS Instance"
-        } 
+        }
     Elseif ($paperspace.StatusCode -eq 200) {
         "Paperspace Instance"
         }
@@ -95,7 +95,7 @@ add-type  @"
         using System.Collections.Generic;
         using System.Text;
         using System.Runtime.InteropServices;
- 
+
         namespace ComputerSystem
         {
             public class LSAutil
@@ -107,7 +107,7 @@ add-type  @"
                     public UInt16 MaximumLength;
                     public IntPtr Buffer;
                 }
- 
+
                 [StructLayout(LayoutKind.Sequential)]
                 private struct LSA_OBJECT_ATTRIBUTES
                 {
@@ -118,7 +118,7 @@ add-type  @"
                     public IntPtr SecurityDescriptor;
                     public IntPtr SecurityQualityOfService;
                 }
- 
+
                 private enum LSA_AccessPolicy : long
                 {
                     POLICY_VIEW_LOCAL_INFORMATION = 0x00000001L,
@@ -135,21 +135,21 @@ add-type  @"
                     POLICY_LOOKUP_NAMES = 0x00000800L,
                     POLICY_NOTIFICATION = 0x00001000L
                 }
- 
+
                 [DllImport("advapi32.dll", SetLastError = true, PreserveSig = true)]
                 private static extern uint LsaRetrievePrivateData(
                             IntPtr PolicyHandle,
                             ref LSA_UNICODE_STRING KeyName,
                             out IntPtr PrivateData
                 );
- 
+
                 [DllImport("advapi32.dll", SetLastError = true, PreserveSig = true)]
                 private static extern uint LsaStorePrivateData(
                         IntPtr policyHandle,
                         ref LSA_UNICODE_STRING KeyName,
                         ref LSA_UNICODE_STRING PrivateData
                 );
- 
+
                 [DllImport("advapi32.dll", SetLastError = true, PreserveSig = true)]
                 private static extern uint LsaOpenPolicy(
                     ref LSA_UNICODE_STRING SystemName,
@@ -157,66 +157,66 @@ add-type  @"
                     uint DesiredAccess,
                     out IntPtr PolicyHandle
                 );
- 
+
                 [DllImport("advapi32.dll", SetLastError = true, PreserveSig = true)]
                 private static extern uint LsaNtStatusToWinError(
                     uint status
                 );
- 
+
                 [DllImport("advapi32.dll", SetLastError = true, PreserveSig = true)]
                 private static extern uint LsaClose(
                     IntPtr policyHandle
                 );
- 
+
                 [DllImport("advapi32.dll", SetLastError = true, PreserveSig = true)]
                 private static extern uint LsaFreeMemory(
                     IntPtr buffer
                 );
- 
+
                 private LSA_OBJECT_ATTRIBUTES objectAttributes;
                 private LSA_UNICODE_STRING localsystem;
                 private LSA_UNICODE_STRING secretName;
- 
+
                 public LSAutil(string key)
                 {
                     if (key.Length == 0)
                     {
                         throw new Exception("Key lenght zero");
                     }
- 
+
                     objectAttributes = new LSA_OBJECT_ATTRIBUTES();
                     objectAttributes.Length = 0;
                     objectAttributes.RootDirectory = IntPtr.Zero;
                     objectAttributes.Attributes = 0;
                     objectAttributes.SecurityDescriptor = IntPtr.Zero;
                     objectAttributes.SecurityQualityOfService = IntPtr.Zero;
- 
+
                     localsystem = new LSA_UNICODE_STRING();
                     localsystem.Buffer = IntPtr.Zero;
                     localsystem.Length = 0;
                     localsystem.MaximumLength = 0;
- 
+
                     secretName = new LSA_UNICODE_STRING();
                     secretName.Buffer = Marshal.StringToHGlobalUni(key);
                     secretName.Length = (UInt16)(key.Length * UnicodeEncoding.CharSize);
                     secretName.MaximumLength = (UInt16)((key.Length + 1) * UnicodeEncoding.CharSize);
                 }
- 
+
                 private IntPtr GetLsaPolicy(LSA_AccessPolicy access)
                 {
                     IntPtr LsaPolicyHandle;
- 
+
                     uint ntsResult = LsaOpenPolicy(ref this.localsystem, ref this.objectAttributes, (uint)access, out LsaPolicyHandle);
- 
+
                     uint winErrorCode = LsaNtStatusToWinError(ntsResult);
                     if (winErrorCode != 0)
                     {
                         throw new Exception("LsaOpenPolicy failed: " + winErrorCode);
                     }
- 
+
                     return LsaPolicyHandle;
                 }
- 
+
                 private static void ReleaseLsaPolicy(IntPtr LsaPolicyHandle)
                 {
                     uint ntsResult = LsaClose(LsaPolicyHandle);
@@ -226,11 +226,11 @@ add-type  @"
                         throw new Exception("LsaClose failed: " + winErrorCode);
                     }
                 }
- 
+
                 public void SetSecret(string value)
                 {
                     LSA_UNICODE_STRING lusSecretData = new LSA_UNICODE_STRING();
- 
+
                     if (value.Length > 0)
                     {
                         //Create data and key
@@ -245,11 +245,11 @@ add-type  @"
                         lusSecretData.Length = 0;
                         lusSecretData.MaximumLength = 0;
                     }
- 
+
                     IntPtr LsaPolicyHandle = GetLsaPolicy(LSA_AccessPolicy.POLICY_CREATE_SECRET);
                     uint result = LsaStorePrivateData(LsaPolicyHandle, ref secretName, ref lusSecretData);
                     ReleaseLsaPolicy(LsaPolicyHandle);
- 
+
                     uint winErrorCode = LsaNtStatusToWinError(result);
                     if (winErrorCode != 0)
                     {
@@ -317,7 +317,7 @@ Function GetInstanceCredential {
     Try {
         $Credential = Get-Credential -Credential $null
         Try {
-            TestCredential -Credential $Credential 
+            TestCredential -Credential $Credential
             }
         Catch {
                 Remove-Variable Credential
@@ -326,7 +326,7 @@ Function GetInstanceCredential {
                 $Retry = Read-Host "(Y/N)"
                 Switch ($Retry){
                    Y {
-                      GetInstanceCredential 
+                      GetInstanceCredential
                        }
                    N {
                       Return
@@ -349,7 +349,7 @@ Function GetInstanceCredential {
         }
     if($credential) {Set-AutoLogon -Credential $Credential}
     }
-    
+
 Function PromptUserAutoLogon {
 param (
 [switch]$DontPromptPasswordUpdateGPU
@@ -362,12 +362,12 @@ $CloudProvider = CloudProvider
     Else {
         "Detected $CloudProvider"
         Write-Host @"
-Do you want this computer to log on to Windows automatically? 
+Do you want this computer to log on to Windows automatically?
 (Y): This is good when you want the cloud computer to boot straight to Parsec but is less secure as the computer will not be protected by a password at start up
 (N): If you plan to log into Windows with RDP then connect via Parsec, or have been told you don't need to set this up
 "@ -ForegroundColor Black -BackgroundColor Red
-        $ReadHost = Read-Host "(Y/N)" 
-        Switch ($ReadHost) 
+        $ReadHost = Read-Host "(Y/N)"
+        Switch ($ReadHost)
             {
             Y {
                 GetInstanceCredential
@@ -393,7 +393,7 @@ function add-gpo-modifications {
         $add = '[{42B5FAAE-6536-11D2-AE5A-0000F87571E3}{40B6664F-4972-11D1-A7CA-0000F87571E3}]'
         $replace = "$GPO" + "$add"
         (Get-Content "C:\Windows\System32\GroupPolicy\gpt.ini").Replace("$GPO","$replace") | Set-Content "C:\Windows\System32\GroupPolicy\gpt.ini"
-        [int]$i = $gpoversion.trim("Version=") 
+        [int]$i = $gpoversion.trim("Version=")
         [int]$n = $gpoversion.trim("Version=")
         $n +=2
         (Get-Content C:\Windows\System32\GroupPolicy\gpt.ini) -replace "Version=$i", "Version=$n" | Set-Content C:\Windows\System32\GroupPolicy\gpt.ini
@@ -459,7 +459,7 @@ function disable-iesecurity {
 #download-files-S3
 function download-resources {
     ProgressWriter -Status "Downloading DirectX June 2010 Redist" -PercentComplete $PercentComplete
-    (New-Object System.Net.WebClient).DownloadFile("https://download.microsoft.com/download/8/4/A/84A35BF1-DAFE-4AE8-82AF-AD2AE20B6B14/directx_Jun2010_redist.exe", "C:\ParsecTemp\Apps\directx_Jun2010_redist.exe") 
+    (New-Object System.Net.WebClient).DownloadFile("https://download.microsoft.com/download/8/4/A/84A35BF1-DAFE-4AE8-82AF-AD2AE20B6B14/directx_Jun2010_redist.exe", "C:\ParsecTemp\Apps\directx_Jun2010_redist.exe")
     ProgressWriter -Status "Downloading Parsec" -PercentComplete $PercentComplete
     (New-Object System.Net.WebClient).DownloadFile("https://builds.parsecgaming.com/package/parsec-windows.exe", "C:\ParsecTemp\Apps\parsec-windows.exe")
     ProgressWriter -Status "Downloading Parsec Virtual Display Driver" -percentcomplete $PercentComplete
@@ -484,7 +484,7 @@ function install-windows-features {
     ProgressWriter -Status "Installing .net 3.5" -PercentComplete $PercentComplete
     Install-WindowsFeature Net-Framework-Core | Out-Null
     ProgressWriter -Status "Cleaning up" -PercentComplete $PercentComplete
-    Remove-Item -Path C:\ParsecTemp\DirectX -force -Recurse 
+    Remove-Item -Path C:\ParsecTemp\DirectX -force -Recurse
     }
 
 Function TeamMachineSetupScheduledTask {
@@ -569,7 +569,7 @@ function disable-network-window {
     if((Test-RegistryValue -path HKLM:\SYSTEM\CurrentControlSet\Control\Network -Value NewNetworkWindowOff)-eq $true) {} Else {new-itemproperty -path HKLM:\SYSTEM\CurrentControlSet\Control\Network -name "NewNetworkWindowOff" | Out-Null}
     }
 
-#Enable Pointer Precision 
+#Enable Pointer Precision
 function enhance-pointer-precision {
     ProgressWriter -Status "Enabling enchanced pointer precision" -PercentComplete $PercentComplete
     Set-Itemproperty -Path 'HKCU:\Control Panel\Mouse' -Name MouseSpeed -Value 1 | Out-Null
@@ -737,7 +737,7 @@ function gpu-update-shortcut {
 #Provider specific driver install and setup
 Function provider-specific {
     ProgressWriter -Status "Installing VB CAble Audio Driver if required and removing system information from appearing on Google Cloud Desktops" -PercentComplete $PercentComplete
-    #Device ID Query 
+    #Device ID Query
     $gputype = Get-PnpDevice | Where-Object {($_.DeviceID -like 'PCI\VEN_10DE*' -or $_.DeviceID -like '*PCI\VEN_1002*') -and ($_.PNPClass -eq 'Display' -or $_.Name -like '*Video Controller')} | Select-Object InstanceID -ExpandProperty InstanceID
     if ($gputype -eq $null) {
         }
@@ -752,7 +752,7 @@ Function provider-specific {
             }
         ElseIF($gputype.Substring(13,8) -eq "DEV_1BB1") {
             #Paperspace P4000
-            } 
+            }
         Elseif($gputype.Substring(13,8) -eq "DEV_1BB0") {
             #Paperspace P5000
             }
@@ -800,7 +800,7 @@ Function Server2019Controller {
         (New-Object System.Net.WebClient).DownloadFile("http://www.download.windowsupdate.com/msdownload/update/v3-19990518/cabpool/2060_8edb3031ef495d4e4247e51dcb11bef24d2c4da7.cab", "C:\ParsecTemp\Drivers\Xbox360_64Eng.cab")
         if((Test-Path -Path C:\ParsecTemp\Drivers\Xbox360_64Eng) -eq $true) {} Else {New-Item -Path C:\ParsecTemp\Drivers\Xbox360_64Eng -ItemType directory | Out-Null}
         cmd.exe /c "C:\Windows\System32\expand.exe C:\ParsecTemp\Drivers\Xbox360_64Eng.cab -F:* C:\ParsecTemp\Drivers\Xbox360_64Eng" | Out-Null
-        cmd.exe /c '"C:\Program Files\Parsec\vigem\10\x64\devcon.exe" dp_add "C:\ParsecTemp\Drivers\Xbox360_64Eng\xusb21.inf"' | Out-Null
+        cmd.exe /c '"C:\Program Files\Parsec\vdd\devcon.exe" dp_add "C:\ParsecTemp\Drivers\Xbox360_64Eng\xusb21.inf"' | Out-Null
         }
     }
 
@@ -811,8 +811,8 @@ Function InstallParsec {
 Function InstallParsecVDD {
     ProgressWriter -Status "Installing Parsec Virtual Display Driver" -PercentComplete $PercentComplete
     Import-Certificate -CertStoreLocation "Cert:\LocalMachine\TrustedPublisher" -FilePath "$env:ProgramData\ParsecLoader\parsecpublic.cer" | Out-Null
-    Start-Process "C:\ParsecTemp\Apps\parsec-vdd.exe" -ArgumentList "/silent" 
-    $iterator = 0    
+    Start-Process "C:\ParsecTemp\Apps\parsec-vdd.exe" -ArgumentList "/silent"
+    $iterator = 0
     do {
         Start-Sleep -s 2
         $iterator++
@@ -845,9 +845,9 @@ function disable-devices {
     Get-PnpDevice | where {$_.friendlyname -like "Microsoft Basic Display Adapter" -and $_.status -eq "OK"} | Disable-PnpDevice -confirm:$false
     Get-PnpDevice | where {$_.friendlyname -like "Google Graphics Array (GGA)" -and $_.status -eq "OK"} | Disable-PnpDevice -confirm:$false
     Get-PnpDevice | where {$_.friendlyname -like "Microsoft Hyper-V Video" -and $_.status -eq "OK"} | Disable-PnpDevice -confirm:$false
-    Start-Process -FilePath "C:\Program Files\Parsec\vigem\10\x64\devcon.exe" -ArgumentList '/r disable "PCI\VEN_1013&DEV_00B8*"'
-    Start-Process -FilePath "C:\Program Files\Parsec\vigem\10\x64\devcon.exe" -ArgumentList '/r disable "PCI\VEN_1D0F&DEV_1111*"'
-    Start-Process -FilePath "C:\Program Files\Parsec\vigem\10\x64\devcon.exe" -ArgumentList '/r disable "PCI\VEN_1AE0&DEV_A002*"'
+    Start-Process -FilePath "C:\Program Files\Parsec\vdd\devcon.exe" -ArgumentList '/r disable "PCI\VEN_1013&DEV_00B8*"'
+    Start-Process -FilePath "C:\Program Files\Parsec\vdd\devcon.exe" -ArgumentList '/r disable "PCI\VEN_1D0F&DEV_1111*"'
+    Start-Process -FilePath "C:\Program Files\Parsec\vdd\devcon.exe" -ArgumentList '/r disable "PCI\VEN_1AE0&DEV_A002*"'
     }
 
 #Cleanup
@@ -875,36 +875,36 @@ Function StartGPUUpdate {
         }
     }
 Write-Host -foregroundcolor red "
-                               ((//////                                
-                             #######//////                             
-                             ##########(/////.                         
-                             #############(/////,                      
-                             #################/////*                   
-                             #######/############////.                 
-                             #######/// ##########////                 
-                             #######///    /#######///                 
-                             #######///     #######///                 
-                             #######///     #######///                 
-                             #######////    #######///                 
-                             ########////// #######///                 
-                             ###########////#######///                 
-                               ####################///                 
-                                   ################///                 
-                                     *#############///                 
-                                         ##########///                 
-                                            ######(*                   
-                                                           
-                           
-                                       
+                               ((//////
+                             #######//////
+                             ##########(/////.
+                             #############(/////,
+                             #################/////*
+                             #######/############////.
+                             #######/// ##########////
+                             #######///    /#######///
+                             #######///     #######///
+                             #######///     #######///
+                             #######////    #######///
+                             ########////// #######///
+                             ###########////#######///
+                               ####################///
+                                   ################///
+                                     *#############///
+                                         ##########///
+                                            ######(*
+
+
+
                     ~Parsec Self Hosted Cloud Setup Script~
 
                     This script sets up your cloud computer
                     with a bunch of settings and drivers
-                    to make your life easier.  
-                    
-                    It's provided with no warranty, 
+                    to make your life easier.
+
+                    It's provided with no warranty,
                     so use it at your own risk.
-                    
+
                     Check out the README.md for more
                     information.
 
@@ -913,7 +913,7 @@ Write-Host -foregroundcolor red "
                     OS:
                     Server 2016
                     Server 2019
-                    
+
                     CLOUD SKU:
                     AWS G3.4xLarge    (Tesla M60)
                     AWS G2.2xLarge    (GRID K520)
@@ -925,7 +925,7 @@ Write-Host -foregroundcolor red "
                     Google P4  VW    (Tesla P4 Virtual Workstation)
                     Google T4  VW    (Tesla T4 Virtual Workstation)
 
-"   
+"
 #PromptUserAutoLogon -DontPromptPasswordUpdateGPU:$DontPromptPasswordUpdateGPU
 $ScripttaskList = @(
 "setupEnvironment";
@@ -966,12 +966,12 @@ foreach ($func in $ScripttaskList) {
 StartGPUUpdate -DontPromptPasswordUpdateGPU:$DontPromptPasswordUpdateGPU
 Start-ScheduledTask -TaskName "Setup Team Machine"
 ProgressWriter -status "Done" -percentcomplete 100
-Write-Host "1. Open Parsec and sign in (Team machines should have automatically signed in if userdata was correct)" -ForegroundColor black -BackgroundColor Green 
-Write-Host "2. Use GPU Updater to update your GPU Drivers!" -ForegroundColor black -BackgroundColor Green 
-#Write-Host "You don't need to sign into Razer Synapse, the login box will stop appearing after a couple of reboots" -ForegroundColor black -BackgroundColor Green 
-Write-Host "You may want to change your Windows password to something simpler if the password your cloud provider gave you is super long" -ForegroundColor black -BackgroundColor Green 
+Write-Host "1. Open Parsec and sign in (Team machines should have automatically signed in if userdata was correct)" -ForegroundColor black -BackgroundColor Green
+Write-Host "2. Use GPU Updater to update your GPU Drivers!" -ForegroundColor black -BackgroundColor Green
+#Write-Host "You don't need to sign into Razer Synapse, the login box will stop appearing after a couple of reboots" -ForegroundColor black -BackgroundColor Green
+Write-Host "You may want to change your Windows password to something simpler if the password your cloud provider gave you is super long" -ForegroundColor black -BackgroundColor Green
 Write-host "DONE!" -ForegroundColor black -BackgroundColor Green
-if ($DontPromptPasswordUpdateGPU) {} 
+if ($DontPromptPasswordUpdateGPU) {}
 Else {pause}
 
 
